@@ -325,36 +325,52 @@ class Admin extends BaseController
                 <?php
             }
             else{
+                // Proses upload file cover buku
+                $coverBuku = $this->request->getFile('cover_buku');
+                $ext1 = $coverBuku->getClientExtension();
+                $namaFile1 = "Cover-Buku-".date("ymdHis").".".$ext1;
+                $coverBuku->move('Assets/CoverBuku', $namaFile1);
+
+                // Proses upload file e-book
+                $eBook = $this->request->getFile('e_book');
+                $ext2 = $eBook->getClientExtension();
+                $namaFile2 = "E-Book-".date("ymdHis").".".$ext2;
+                $eBook->move('Assets/E-Book', $namaFile2);
+
+                // Auto number
                 $hasil = $modelBuku->autoNumber()->getRowArray();
                 if(!$hasil){
-                    $id = "BK001";
+                    $id = "BKU001";
                 }
                 else{
-                    $kode = $hasil['kode_buku'];
+                    $kode = $hasil['id_buku'];
                     $noUrut = (int) substr($kode, -3);
                     $noUrut++;
-                    $id = "BK".sprintf("%03s", $noUrut);
+                    $id = "BKU".sprintf("%03s", $noUrut);
                 }
 
                 $dataSimpan = [
-                    'kode_buku' => $id,
-                    'judul_buku' => $judul,
-                    'pengarang' => $pengarang,
-                    'penerbit' => $penerbit,
-                    'tahun_terbit' => $tahun,
+                    'id_buku' => $id,
+                    'judul_buku' => ucwords($judul),
+                    'pengarang' => ucwords($pengarang),
+                    'penerbit' => ucwords($penerbit),
+                    'tahun' => $tahun,
+                    'jumlah_eksemplar' => $stok,
                     'id_kategori' => $kategori,
+                    'keterangan' => $deskripsi,
                     'id_rak' => $rak,
-                    'stok' => $stok,
-                    'deskripsi' => $deskripsi,
+                    'cover_buku' => $namaFile1,
+                    'e_book' => $namaFile2,
                     'is_delete_buku' => '0',
                     'created_at' => date('Y-m-d H:i:s'),
                     'updated_at' => date('Y-m-d H:i:s')
                 ];
+
                 $modelBuku->saveDataBuku($dataSimpan);
-                session()->setFlashdata('pesan','Data Buku Berhasil Ditambahkan!!');
+                session()->setFlashdata('success', 'Data Buku Berhasil Diperbaharui!');
                 ?>
                 <script>
-                    document.location = "<?= base_url('admin/master-data-buku');?>";
+                    document.location = "<?= base_url('admin/master-buku'); ?>";
                 </script>
                 <?php
             }
@@ -455,7 +471,6 @@ class Admin extends BaseController
     </script>
     <?php
     }
-    // Akhir modul buku
 
     public function input_buku()
     {
@@ -501,5 +516,74 @@ class Admin extends BaseController
             session()->setFlashdata('error', "Format file yang diizinkan : pdf dengan maksimal ukuran 10 MB");
             return redirect()->to('/admin/input-buku')->withInput();
         }
+
+        // Proses upload file cover buku
+        $coverBuku = $this->request->getFile('cover_buku');
+        $ext1 = $coverBuku->getClientExtension();
+        $namaFile1 = "Cover-Buku-".date("ymdHis").".".$ext1;
+        $coverBuku->move('Assets/CoverBuku', $namaFile1);
+
+        // Proses upload file e-book
+        $eBook = $this->request->getFile('e_book');
+        $ext2 = $eBook->getClientExtension();
+        $namaFile2 = "E-Book-".date("ymdHis").".".$ext2;
+        $eBook->move('Assets/E-Book', $namaFile2);
+
+        // Auto number
+        $hasil = $modelBuku->autoNumber()->getRowArray();
+        if(!$hasil){
+            $id = "BKU001";
+        }
+        else{
+            $kode = $hasil['id_buku'];
+            $noUrut = (int) substr($kode, -3);
+            $noUrut++;
+            $id = "BKU".sprintf("%03s", $noUrut);
+        }
+
+        $dataSimpan = [
+            'id_buku' => $id,
+            'judul_buku' => ucwords($judulBuku),
+            'pengarang' => ucwords($pengarang),
+            'penerbit' => ucwords($penerbit),
+            'tahun' => $tahun,
+            'jumlah_eksemplar' => $jumlahEksemplar,
+            'id_kategori' => $kategoriBuku,
+            'keterangan' => $keterangan,
+            'id_rak' => $rak,
+            'cover_buku' => $namaFile1,
+            'e_book' => $namaFile2,
+            'is_delete_buku' => '0',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        $modelBuku->saveDataBuku($dataSimpan);
+        session()->setFlashdata('success', 'Data Buku Berhasil Diperbaharui!');
+        ?>
+        <script>
+            document.location = "<?= base_url('admin/master-buku'); ?>";
+        </script>
+        <?php
+    }
+
+    public function hapus_buku()
+    {
+        $modelBuku = new M_Buku;
+
+        $uri = service('uri');
+        $idHapus = $uri->getSegment(3);
+
+        $dataHapus = $modelBuku->getDataBuku(['id_buku' => $idHapus])->getRowArray();
+        unlink('Assets/CoverBuku/'.$dataHapus['cover_buku']); // hapus file yang lama
+        unlink('Assets/E-Book/'.$dataHapus['e_book']); // hapus file yang lama
+
+        $modelBuku->hapusDataBuku(['id_buku' => $idHapus]);
+        session()->setFlashdata('success', 'Data Buku Berhasil Dihapus!');
+        ?>
+        <script>
+            document.location = "<?= base_url('admin/master-buku'); ?>";
+        </script>
+        <?php
     }
 }
