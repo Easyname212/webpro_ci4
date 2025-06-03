@@ -10,8 +10,7 @@
 						<a href="<?= base_url('admin/master-data-admin');?>">
 							<span class="glyphicon glyphicon-share-alt"></span> Data Admin
 						</a>
-					</li>
-					<li>
+					</li>					<li>
 						<a href="<?= base_url('admin/master-data-anggota');?>">
 							<span class="glyphicon glyphicon-share-alt"></span> Data Anggota
 						</a>
@@ -20,8 +19,7 @@
 						<a href="<?= base_url('admin/master-data-kategori');?>">
 							<span class="glyphicon glyphicon-share-alt"></span> Data Kategori
 						</a>
-					</li>
-					<li>
+					</li>					<li>
 						<a href="<?= base_url('admin/master-data-rak');?>">
 							<span class="glyphicon glyphicon-share-alt"></span> Data Rak
 						</a>

@@ -26,3 +26,27 @@ $routes->post('/admin/save-buku', 'Admin::simpan_data_buku');
 $routes->get('/admin/edit-buku/(:alphanum)', 'Admin::edit_data_buku/$1');
 $routes->post('/admin/update-buku', 'Admin::update_data_buku');
 $routes->get('/admin/delete-buku/(:alphanum)', 'Admin::hapus_data_buku/$1');
+
+// Routes untuk module rak
+$routes->get('/admin/master-data-rak', 'Admin::master_rak');
+$routes->get('/admin/input-rak', 'Admin::input_rak');
+$routes->post('/admin/simpan-rak', 'Admin::simpan_rak');
+$routes->get('/admin/edit-rak/(:alphanum)', 'Admin::edit_rak/$1');
+$routes->post('/admin/update-rak', 'Admin::update_rak');
+$routes->get('/admin/hapus-rak/(:alphanum)', 'Admin::hapus_rak/$1');
+
+// Routes untuk module kategori
+$routes->get('/admin/master-data-kategori', 'Admin::master_kategori');
+$routes->get('/admin/input-kategori', 'Admin::input_kategori');
+$routes->post('/admin/simpan-kategori', 'Admin::simpan_kategori');
+$routes->get('/admin/edit-kategori/(:alphanum)', 'Admin::edit_kategori/$1');
+$routes->post('/admin/update-kategori', 'Admin::update_kategori');
+$routes->get('/admin/hapus-kategori/(:alphanum)', 'Admin::hapus_kategori/$1');
+
+// Routes untuk module anggota
+$routes->get('/admin/master-data-anggota', 'Admin::master_anggota');
+$routes->get('/admin/input-anggota', 'Admin::input_anggota');
+$routes->post('/admin/simpan-anggota', 'Admin::simpan_anggota');
+$routes->get('/admin/edit-anggota/(:alphanum)', 'Admin::edit_anggota/$1');
+$routes->post('/admin/update-anggota', 'Admin::update_anggota');
+$routes->get('/admin/hapus-anggota/(:alphanum)', 'Admin::hapus_anggota/$1');

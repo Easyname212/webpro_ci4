@@ -30,22 +30,18 @@
                             <label>Password Admin</label>
                             <input type="password" class="form-control" name="password" placeholder="Masukkan Password Admin" required="required">
                         </div>
-                        <div style="clear:both;"></div>
-
-                        <div class="form-group col-md-6">
+                        <div style="clear:both;"></div>                        <div class="form-group col-md-6">
                             <label>Akses Level</label>
                             <select class="form-control" name="level" required="required">
                                 <option value="">-- Pilih Level --</option>
-                                <option value="admin">Kepala Perpustakaan</option>
-                                <option value="petugas">Admin Perpustakaan</option>
+                                <option value="2">Kepala Perpustakaan</option>
+                                <option value="3">Admin Perpustakaan</option>
                             </select>
                         </div>
-                        <div style="clear:both;"></div>
-
-                        <div class="form-group col-md-6">
+                        <div style="clear:both;"></div>                        <div class="form-group col-md-6">
                             <button type="submit" class="btn btn-primary">Simpan</button>
                             <button type="reset" class="btn btn-danger">Batal</button>
-                            <a href="<?= base_url('admin/data-admin'); ?>" class="btn btn-warning">Kembali</a>
+                            <a href="<?= base_url('admin/master-data-admin'); ?>" class="btn btn-warning">Kembali</a>
                         </div>
                         <div style="clear:both;"></div>
                     </form>

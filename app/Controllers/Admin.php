@@ -4,6 +4,9 @@ namespace App\Controllers;
 
 use App\Models\M_Admin;
 use App\Models\M_Buku;
+use App\Models\M_Rak;
+use App\Models\M_Kategori;
+use App\Models\M_Anggota;
 
 class Admin extends BaseController
 {
@@ -278,12 +281,12 @@ class Admin extends BaseController
                 document.location = "<?= base_url('admin/login-admin');?>";
             </script>
             <?php
-        }
-        else{
-            $modelBuku = new M_Buku;
+        }        else{
+            $modelKategori = new M_Kategori;
+            $modelRak = new M_Rak;
             
-            $dataKategori = $modelBuku->getDataKategori(['is_delete_kategori' => '0'])->getResultArray();
-            $dataRak = $modelBuku->getDataRak(['is_delete_rak' => '0'])->getResultArray();
+            $dataKategori = $modelKategori->findAll();
+            $dataRak = $modelRak->findAll();
 
             $data['kategori'] = $dataKategori;
             $data['rak'] = $dataRak;
@@ -379,14 +382,15 @@ class Admin extends BaseController
 
     public function edit_data_buku()
     {
-        $uri = service('uri');
-        $idEdit = $uri->getSegment(3);
+        $uri = service('uri');        $idEdit = $uri->getSegment(3);
         $modelBuku = new M_Buku;
+        $modelKategori = new M_Kategori;
+        $modelRak = new M_Rak;
 
         // Mengambil data buku dari table buku di database berdasarkan parameter yang dikirimkan
         $dataBuku = $modelBuku->getDataBuku(['sha1(id_buku)' => $idEdit])->getRowArray();
-        $dataKategori = $modelBuku->getDataKategori(['is_delete_kategori' => '0'])->getResultArray();
-        $dataRak = $modelBuku->getDataRak(['is_delete_rak' => '0'])->getResultArray();
+        $dataKategori = $modelKategori->findAll();
+        $dataRak = $modelRak->findAll();
         
         session()->set(['idUpdate' => $dataBuku['id_buku']]);
 
@@ -479,10 +483,9 @@ class Admin extends BaseController
         $uri = service('uri');
         $page = $uri->getSegment(2);
 
-        $data['page'] = $page;
-        $data['web_title'] = "Input Data Buku";
-        $data['data_kategori'] = $modelKategori->getDataKategori(['is_delete_kategori' => '0'])->getResultArray();
-        $data['data_rak'] = $modelRak->getDataRak(['is_delete_rak' => '0'])->getResultArray();
+        $data['page'] = $page;        $data['web_title'] = "Input Data Buku";
+        $data['data_kategori'] = $modelKategori->findAll();
+        $data['data_rak'] = $modelRak->findAll();
 
         echo view('Backend/Template/header', $data);
         echo view('Backend/Template/sidebar', $data);
@@ -585,5 +588,387 @@ class Admin extends BaseController
             document.location = "<?= base_url('admin/master-buku'); ?>";
         </script>
         <?php
+    }    // ================= MASTER RAK =================
+    public function master_rak()
+    {
+        if(session()->get('ses_id')==="" || session()->get('ses_user')==="" || session()->get('ses_level')===""){
+            session()->setFlashdata('error', 'Silakan login terlebih dahulu!');
+            return redirect()->to('admin/login-admin');
+        }
+        
+        $modelRak = new M_Rak;
+        $data['dataRak'] = $modelRak->findAll();
+
+        echo view('Backend/Template/header');
+        echo view('Backend/Template/sidebar');
+        echo view('Backend/MasterRak/master-data-rak', $data);
+        echo view('Backend/Template/footer');
+    }    public function input_rak()
+    {
+        if(session()->get('ses_id')==="" || session()->get('ses_user')==="" || session()->get('ses_level')===""){
+            session()->setFlashdata('error', 'Silakan login terlebih dahulu!');
+            return redirect()->to('admin/login-admin');
+        }
+        
+        echo view('Backend/Template/header');
+        echo view('Backend/Template/sidebar');
+        echo view('backend/MasterRak/input-rak');
+        echo view('Backend/Template/footer');
+    }    public function simpan_rak()
+    {
+        if(session()->get('ses_id')==="" || session()->get('ses_user')==="" || session()->get('ses_level')===""){
+            session()->setFlashdata('error', 'Silakan login terlebih dahulu!');
+            return redirect()->to('admin/login-admin');
+        }
+        
+        $modelRak = new M_Rak;
+
+        // Auto generate kode rak
+        $lastData = $modelRak->orderBy('id_rak', 'DESC')->first();
+        $lastNumber = $lastData ? (int)substr($lastData['kode_rak'], 3) : 0;
+        $newNumber = $lastNumber + 1;
+        $kodeRak = 'RAK' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+        $data = [
+            'kode_rak' => $kodeRak,
+            'nama_rak' => ucwords($this->request->getPost('nama_rak')),
+            'lokasi' => ucwords($this->request->getPost('lokasi')),
+            'keterangan' => ucwords($this->request->getPost('keterangan'))
+        ];
+
+        $modelRak->simpanDataRak($data);        session()->setFlashdata('success', 'Data Rak Berhasil Disimpan!');
+        ?>
+        <script>
+            document.location = "<?= base_url('admin/master-data-rak'); ?>";
+        </script>
+        <?php
+    }    public function edit_rak()
+    {
+        if(session()->get('ses_id')==="" || session()->get('ses_user')==="" || session()->get('ses_level')===""){
+            session()->setFlashdata('error', 'Silakan login terlebih dahulu!');
+            return redirect()->to('admin/login-admin');
+        }
+        
+        $modelRak = new M_Rak;
+
+        $uri = service('uri');
+        $idEdit = $uri->getSegment(3);
+
+        // Decrypt SHA1 encoded ID
+        $allRak = $modelRak->findAll();
+        $dataEdit = null;
+        
+        foreach ($allRak as $rak) {
+            if (sha1($rak['id_rak']) === $idEdit) {
+                $dataEdit = $rak;
+                break;
+            }
+        }
+
+        if (!$dataEdit) {
+            session()->setFlashdata('error', 'Data Rak tidak ditemukan!');
+            return redirect()->to('admin/master-data-rak');
+        }
+
+        $data['dataEdit'] = $dataEdit;
+
+        echo view('Backend/Template/header');
+        echo view('Backend/Template/sidebar');
+        echo view('backend/MasterRak/edit-rak', $data);
+        echo view('Backend/Template/footer');
+    }    public function update_rak()
+    {
+        if(session()->get('ses_id')==="" || session()->get('ses_user')==="" || session()->get('ses_level')===""){
+            session()->setFlashdata('error', 'Silakan login terlebih dahulu!');
+            return redirect()->to('admin/login-admin');
+        }
+        
+        $modelRak = new M_Rak;
+
+        $idUpdate = $this->request->getPost('id_rak');
+        $data = [
+            'nama_rak' => ucwords($this->request->getPost('nama_rak')),
+            'lokasi' => ucwords($this->request->getPost('lokasi')),
+            'keterangan' => ucwords($this->request->getPost('keterangan'))
+        ];
+
+        $modelRak->ubahDataRak($data, ['id_rak' => $idUpdate]);        session()->setFlashdata('success', 'Data Rak Berhasil Diupdate!');
+        ?>
+        <script>
+            document.location = "<?= base_url('admin/master-data-rak'); ?>";
+        </script>
+        <?php
+    }    public function hapus_rak()
+    {
+        if(session()->get('ses_id')==="" || session()->get('ses_user')==="" || session()->get('ses_level')===""){
+            session()->setFlashdata('error', 'Silakan login terlebih dahulu!');
+            return redirect()->to('admin/login-admin');
+        }
+        
+        $modelRak = new M_Rak;
+
+        $uri = service('uri');
+        $idHapus = $uri->getSegment(3);
+
+        // Decrypt SHA1 encoded ID
+        $allRak = $modelRak->findAll();
+        $dataHapus = null;
+        
+        foreach ($allRak as $rak) {
+            if (sha1($rak['id_rak']) === $idHapus) {
+                $dataHapus = $rak;
+                break;
+            }
+        }
+
+        if (!$dataHapus) {
+            session()->setFlashdata('error', 'Data Rak tidak ditemukan!');
+        } else {
+            $modelRak->hapusDataRak(['id_rak' => $dataHapus['id_rak']]);
+            session()->setFlashdata('success', 'Data Rak Berhasil Dihapus!');
+        }
+        ?>
+        <script>
+            document.location = "<?= base_url('admin/master-data-rak'); ?>";
+        </script>
+        <?php
+    }// ================= MASTER KATEGORI =================
+    public function master_kategori()
+    {
+        if(session()->get('ses_id')==="" || session()->get('ses_user')==="" || session()->get('ses_level')===""){
+            session()->setFlashdata('error', 'Silakan login terlebih dahulu!');
+            return redirect()->to('admin/login-admin');
+        }
+        
+        $modelKategori = new M_Kategori;
+        $data['dataKategori'] = $modelKategori->findAll();
+
+        echo view('Backend/Template/header');
+        echo view('Backend/Template/sidebar');
+        echo view('Backend/MasterKategori/master-data-kategori', $data);
+        echo view('Backend/Template/footer');
+    }
+
+    public function input_kategori()
+    {
+        return view('backend/MasterKategori/input-kategori');
+    }
+
+    public function simpan_kategori()
+    {
+        $modelKategori = new M_Kategori;
+
+        // Auto generate kode kategori
+        $lastData = $modelKategori->orderBy('id_kategori', 'DESC')->first();
+        $lastNumber = $lastData ? (int)substr($lastData['kode_kategori'], 3) : 0;
+        $newNumber = $lastNumber + 1;
+        $kodeKategori = 'KAT' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+        $data = [
+            'kode_kategori' => $kodeKategori,
+            'nama_kategori' => ucwords($this->request->getPost('nama_kategori')),
+            'keterangan' => ucwords($this->request->getPost('keterangan'))
+        ];
+
+        $modelKategori->simpanDataKategori($data);
+        session()->setFlashdata('success', 'Data Kategori Berhasil Disimpan!');
+        ?>
+        <script>
+            document.location = "<?= base_url('admin/master-kategori'); ?>";
+        </script>
+        <?php
+    }    public function edit_kategori()
+    {
+        $modelKategori = new M_Kategori;
+
+        $uri = service('uri');
+        $idEdit = $uri->getSegment(3);
+
+        $data['dataEdit'] = $modelKategori->where('id_kategori', $idEdit)->first();
+
+        return view('backend/MasterKategori/edit-kategori', $data);
+    }
+
+    public function update_kategori()
+    {
+        $modelKategori = new M_Kategori;
+
+        $idUpdate = $this->request->getPost('id_kategori');
+        $data = [
+            'nama_kategori' => ucwords($this->request->getPost('nama_kategori')),
+            'keterangan' => ucwords($this->request->getPost('keterangan'))
+        ];
+
+        $modelKategori->ubahDataKategori($data, ['id_kategori' => $idUpdate]);
+        session()->setFlashdata('success', 'Data Kategori Berhasil Diupdate!');
+        ?>
+        <script>
+            document.location = "<?= base_url('admin/master-kategori'); ?>";
+        </script>
+        <?php
+    }
+
+    public function hapus_kategori()
+    {
+        $modelKategori = new M_Kategori;
+
+        $uri = service('uri');
+        $idHapus = $uri->getSegment(3);
+
+        $modelKategori->hapusDataKategori(['id_kategori' => $idHapus]);        session()->setFlashdata('success', 'Data Kategori Berhasil Dihapus!');
+        return redirect()->to('admin/master-kategori');
+    }
+
+    // ================= MASTER ANGGOTA =================
+    public function master_anggota()
+    {
+        if(session()->get('ses_id')==="" || session()->get('ses_user')==="" || session()->get('ses_level')===""){
+            session()->setFlashdata('error', 'Silakan login terlebih dahulu!');
+            return redirect()->to('admin/login-admin');
+        }
+        
+        $modelAnggota = new M_Anggota;
+        
+        // Gunakan method CodeIgniter standard yang lebih simple
+        $dataAnggota = $modelAnggota->orderBy('nama_anggota', 'ASC')->findAll();
+        
+        // Debug: Tampilkan jumlah data
+        session()->setFlashdata('info', 'Jumlah data anggota: ' . count($dataAnggota));
+        
+        $data['dataAnggota'] = $dataAnggota;        echo view('backend/template/header');
+        echo view('backend/template/sidebar');
+        echo view('backend/MasterAnggota/master-data-anggota', $data);
+        echo view('backend/template/footer');
+    }
+
+    public function input_anggota()
+    {
+        // Cek session login
+        if(session()->get('ses_id')==="" || session()->get('ses_user')==="" || session()->get('ses_level')===""){
+            session()->setFlashdata('error', 'Silakan login terlebih dahulu!');
+            return redirect()->to('admin/login-admin');
+        }        echo view('backend/template/header');
+        echo view('backend/template/sidebar');
+        echo view('backend/MasterAnggota/input-anggota');
+        echo view('backend/template/footer');
+    }
+
+    public function simpan_anggota()
+    {
+        $modelAnggota = new M_Anggota;
+        
+        try {
+            $data = [
+                'nama_anggota' => $this->request->getPost('nama_anggota'),
+                'email' => $this->request->getPost('email'),  
+                'no_tlp' => $this->request->getPost('no_tlp'),
+                'alamat' => $this->request->getPost('alamat'),
+                'jenis_kelamin' => $this->request->getPost('jenis_kelamin')
+            ];
+
+            $result = $modelAnggota->simpanDataAnggota($data);
+            
+            if($result) {
+                session()->setFlashdata('success', 'Data berhasil disimpan!');
+            } else {
+                session()->setFlashdata('error', 'Gagal menyimpan data!');
+            }
+            
+        } catch (\Exception $e) {
+            session()->setFlashdata('error', 'Error: ' . $e->getMessage());        }
+        
+        return redirect()->to('admin/master-data-anggota');
+    }
+
+    public function edit_anggota()
+    {
+        // Cek session login
+        if(session()->get('ses_id')==="" || session()->get('ses_user')==="" || session()->get('ses_level')===""){
+            session()->setFlashdata('error', 'Silakan login terlebih dahulu!');
+            return redirect()->to('admin/login-admin');
+        }
+        
+        $modelAnggota = new M_Anggota;
+
+        $uri = service('uri');
+        $hashId = $uri->getSegment(3);
+        
+        // Cari data berdasarkan hash SHA1
+        $allData = $modelAnggota->findAll();
+        $dataEdit = null;
+        
+        foreach($allData as $row) {
+            if(sha1($row['id_anggota']) == $hashId) {
+                $dataEdit = $row;
+                break;
+            }
+        }
+        
+        if(!$dataEdit) {
+            session()->setFlashdata('error', 'Data tidak ditemukan!');
+            return redirect()->to('admin/master-data-anggota');
+        }
+        
+        $data['dataEdit'] = $dataEdit;
+
+        echo view('Backend/Template/header');
+        echo view('Backend/Template/sidebar');
+        echo view('Backend/MasterAnggota/edit-anggota', $data);
+        echo view('Backend/Template/footer');
+    }
+
+    public function update_anggota()
+    {
+        // Cek session login
+        if(session()->get('ses_id')==="" || session()->get('ses_user')==="" || session()->get('ses_level')===""){
+            session()->setFlashdata('error', 'Silakan login terlebih dahulu!');
+            return redirect()->to('admin/login-admin');
+        }
+        
+        $modelAnggota = new M_Anggota;
+        $idUpdate = $this->request->getPost('id_anggota');
+        $dataUpdate = [
+            'nama_anggota' => ucwords($this->request->getPost('nama_anggota')),
+            'email' => $this->request->getPost('email'),
+            'no_tlp' => $this->request->getPost('no_tlp'),
+            'alamat' => ucwords($this->request->getPost('alamat')),
+            'jenis_kelamin' => $this->request->getPost('jenis_kelamin')
+        ];
+        $modelAnggota->ubahDataAnggota($dataUpdate, ['id_anggota' => $idUpdate]);        session()->setFlashdata('success', 'Data Anggota Berhasil Diupdate!');
+        return redirect()->to('admin/master-data-anggota');
+    }
+
+    public function hapus_anggota()
+    {
+        // Cek session login
+        if(session()->get('ses_id')==="" || session()->get('ses_user')==="" || session()->get('ses_level')===""){
+            session()->setFlashdata('error', 'Silakan login terlebih dahulu!');
+            return redirect()->to('admin/login-admin');
+        }
+        
+        $modelAnggota = new M_Anggota;
+
+        $uri = service('uri');
+        $hashId = $uri->getSegment(3);
+        
+        // Cari ID asli berdasarkan hash SHA1
+        $allData = $modelAnggota->findAll();
+        $idHapus = null;
+        
+        foreach($allData as $row) {
+            if(sha1($row['id_anggota']) == $hashId) {
+                $idHapus = $row['id_anggota'];
+                break;
+            }
+        }
+        
+        if($idHapus) {
+            $modelAnggota->hapusDataAnggota(['id_anggota' => $idHapus]);
+            session()->setFlashdata('success', 'Data Anggota Berhasil Dihapus!');
+        } else {
+            session()->setFlashdata('error', 'Data tidak ditemukan!');
+        }
+        
+        return redirect()->to('admin/master-data-anggota');
     }
 }
